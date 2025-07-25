@@ -118,18 +118,16 @@
       });
 
       await sendEmailVerification(user, {
-        url: 'https://qih1.vercel.app/verivikasi.html',
-        handleCodeInApp: true
-      });
+  url: 'https://qih1.vercel.app/verifikasi.html', // 
+  handleCodeInApp: true
+});
 
+showToast("done silahkan login 🐈.");
 
-      await deleteUser(user);
-      showToast("done silahkan login 🐈.");
-
-      setTimeout(async () => {
-        await signOut(auth);
-        window.location.replace("login.html?registered=true");
-      }, 1500);
+setTimeout(async () => {
+  await signOut(auth);
+  window.location.replace("login.html?registered=true");
+}, 1500);
 
     } catch (error) {
       console.error("REGISTRATION ERROR:", error.code, error.message);
