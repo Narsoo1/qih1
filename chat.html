@@ -1,23 +1,49 @@
 <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chat-Qih</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Chat - Qih</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter&display=swap" />
   <style>
+    :root {
+      --bg-dark: #111827;
+      --header-dark: #1f2937;
+      --bubble-me-dark: #2563eb;
+      --bubble-you-dark: #1f2937;
+      --text-dark: #ffffff;
+      --text-meta-dark: #ccc;
+
+      --bg-light: #f9fafb;
+      --header-light: #e5e7eb;
+      --bubble-me-light: #60a5fa;
+      --bubble-you-light: #e2e8f0;
+      --text-light: #111827;
+      --text-meta-light: #4b5563;
+    }
+
     * {
       box-sizing: border-box;
     }
+
     body {
       margin: 0;
-      background: #111827;
-      color: white;
-      font-family: sans-serif;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-dark);
       height: 100vh;
       overflow: hidden;
+      transition: background 0.3s ease;
     }
+
+    body.light {
+      background: var(--bg-light);
+      color: var(--text-light);
+    }
+
     header {
-      background: #1f2937;
+      background: var(--header-dark);
       padding: 12px 16px;
       display: flex;
       align-items: center;
@@ -25,15 +51,19 @@
       top: 0;
       z-index: 10;
     }
-    header button {
-      font-size: 20px;
-      background: none;
-      border: none;
-      color: #60a5fa;
-      cursor: pointer;
-      margin-right: 12px;
+
+    body.light header {
+      background: var(--header-light);
     }
-    header .name {
+
+    header img {
+      width: 30px;
+      height: 30px;
+      margin-right: 12px;
+      cursor: pointer;
+    }
+
+    .name {
       font-size: 18px;
       font-weight: bold;
       flex: 1;
@@ -41,11 +71,12 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    header .typing {
+
+    .typing {
       font-size: 14px;
       color: #94a3b8;
-      margin-left: auto;
     }
+
     #messages {
       height: calc(100vh - 120px);
       overflow-y: auto;
@@ -54,50 +85,73 @@
       flex-direction: column;
       gap: 10px;
     }
+
     .msg {
       display: flex;
     }
+
     .msg.me {
       justify-content: flex-end;
     }
+
     .msg.you {
       justify-content: flex-start;
     }
+
     .bubble {
       max-width: 75%;
-      background: #1f2937;
       padding: 8px 12px;
       border-radius: 12px;
       position: relative;
-    }
-    .msg.me .bubble {
-      background: #2563eb;
-      color: white;
-    }
-    .text {
+      background: var(--bubble-you-dark);
+      color: var(--text-dark);
       word-wrap: break-word;
     }
+
+    .msg.me .bubble {
+      background: var(--bubble-me-dark);
+      color: white;
+    }
+
+    body.light .bubble {
+      background: var(--bubble-you-light);
+      color: var(--text-light);
+    }
+
+    body.light .msg.me .bubble {
+      background: var(--bubble-me-light);
+      color: white;
+    }
+
     .meta {
       font-size: 12px;
       margin-top: 4px;
       text-align: right;
-      color: #ccc;
+      color: var(--text-meta-dark);
     }
-    .check {
-      margin-left: 6px;
+
+    body.light .meta {
+      color: var(--text-meta-light);
     }
+
     footer {
       display: flex;
       align-items: center;
       padding: 8px;
-      background: #1f2937;
+      background: var(--header-dark);
       border-top: 1px solid #374151;
     }
+
+    body.light footer {
+      background: var(--header-light);
+    }
+
     .input-wrapper {
       display: flex;
       flex: 1;
       position: relative;
     }
+
     footer input {
       width: 100%;
       padding: 10px 40px 10px 12px;
@@ -108,6 +162,12 @@
       color: white;
       outline: none;
     }
+
+    body.light footer input {
+      background: #f3f4f6;
+      color: var(--text-light);
+    }
+
     footer button {
       position: absolute;
       right: 8px;
@@ -119,19 +179,22 @@
       font-size: 20px;
       cursor: pointer;
     }
+
     input:focus, button:focus {
-  outline: none;
-  box-shadow: none;
-}
+      outline: none;
+      box-shadow: none;
+    }
   </style>
 </head>
 <body>
   <header>
-  <img src="qih.svg" id="backBtn" alt="Back" style="width: 30px; height: 30px; cursor: pointer;" />
+    <img src="qih.svg" id="backBtn" alt="Back" />
     <div class="name" id="headerName"></div>
     <div class="typing" id="typingStatus"></div>
   </header>
+
   <div id="messages"></div>
+
   <footer>
     <div class="input-wrapper">
       <input id="input" type="text" placeholder="Tulis pesan..." />
@@ -140,225 +203,235 @@
   </footer>
 
 <script type="module">
-  // ✅ Import Firebase modules
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-  import {
-    getAuth,
-    onAuthStateChanged
-  } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
-  import {
-    getFirestore,
-    doc,
-    getDoc,
-    addDoc,
-    collection,
-    query,
-    orderBy,
-    onSnapshot,
-    updateDoc,
-    setDoc,
-    serverTimestamp
-  } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
-  import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-messaging.js";
-  
-  // ✅ Firebase config
-  const firebaseConfig = {
-    apiKey: "AIzaSyBgZX_GKkekzJ8KwxLaAsZiDKm8moTuWAA",
-    authDomain: "room-chat-4f487.firebaseapp.com",
-    projectId: "room-chat-4f487",
-    storageBucket: "room-chat-4f487.appspot.com",
-    messagingSenderId: "429375918482",
-    appId: "1:429375918482:web:c52cbf150d45561024f14b"
-  };
-  
-  // ✅ Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-  const messaging = getMessaging(app);
-  
-  // ✅ DOM references
-  const messagesBox = document.getElementById("messages");
-  const input = document.getElementById("input");
-  const sendBtn = document.getElementById("sendBtn");
-  const backBtn = document.getElementById("backBtn");
-  const headerName = document.getElementById("headerName");
-  const typingStatus = document.getElementById("typingStatus");
-  
-  let chatId = localStorage.getItem("chatId");
-  let chatWith = localStorage.getItem("chatWith");
-  
-  if (!chatId || !chatWith) {
-    location.href = "home.html";
+const applyTheme = () => {
+  const savedTheme = localStorage.getItem("theme");
+  if (savedTheme === "light") {
+    document.body.classList.add("light");
+  } else {
+    document.body.classList.remove("light");
   }
-  
-  headerName.textContent = chatWith;
-  
-  let currentUser = null;
-  let currentUsername = "";
-  
-  async function loadChat() {
-    const messagesRef = collection(db, "chats", chatId, "messages");
-    const q = query(messagesRef, orderBy("timestamp", "asc"));
-    
-    onSnapshot(q, snapshot => {
-      messagesBox.innerHTML = "";
-      snapshot.forEach(docSnap => {
-        const data = docSnap.data();
-        const div = document.createElement("div");
-        div.className = "msg " + (data.from === currentUsername ? "me" : "you");
-        
-        let time = "--:--";
-        if (data.timestamp?.toDate) {
-          time = new Date(data.timestamp.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        } else if (data.clientTime) {
-          time = new Date(data.clientTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
-        
-        const check = data.from === currentUsername ? (data.seen ? "✔✔" : "✔") : "";
-        
-        const bubble = document.createElement("div");
-        bubble.className = "bubble";
-        bubble.setAttribute("data-id", docSnap.id);
-        
-        let pesanTeks = data.text;
-        if (data.edited) pesanTeks += " (diedit)";
-        
-        bubble.innerHTML = `
-          <div class="text">${pesanTeks}</div>
-          <div class="meta">${time} <span class="check">${check}</span></div>
-        `;
-        
-        div.appendChild(bubble);
-        messagesBox.appendChild(div);
-        
-        if (data.from !== currentUsername && !data.seen) {
-          updateDoc(doc(db, "chats", chatId, "messages", docSnap.id), { seen: true });
-        }
-      });
-      
-      messagesBox.scrollTop = messagesBox.scrollHeight;
+};
+applyTheme();
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  addDoc,
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  updateDoc,
+  setDoc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-messaging.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBgZX_GKkekzJ8KwxLaAsZiDKm8moTuWAA",
+  authDomain: "room-chat-4f487.firebaseapp.com",
+  projectId: "room-chat-4f487",
+  storageBucket: "room-chat-4f487.appspot.com",
+  messagingSenderId: "429375918482",
+  appId: "1:429375918482:web:c52cbf150d45561024f14b"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const messaging = getMessaging(app);
+
+// Element UI
+const messagesBox = document.getElementById("messages");
+const input = document.getElementById("input");
+const sendBtn = document.getElementById("sendBtn");
+const backBtn = document.getElementById("backBtn");
+const headerName = document.getElementById("headerName");
+const typingStatus = document.getElementById("typingStatus");
+
+// Chat info dari localStorage
+let chatId = localStorage.getItem("chatId");
+let chatWith = localStorage.getItem("chatWith");
+
+if (!chatId || !chatWith) location.href = "home.html";
+headerName.textContent = chatWith;
+
+let currentUser = null;
+let currentUsername = "";
+
+// Fungsi untuk load semua pesan
+async function loadChat() {
+  const messagesRef = collection(db, "chats", chatId, "messages");
+  const q = query(messagesRef, orderBy("timestamp", "asc"));
+
+  onSnapshot(q, snapshot => {
+    messagesBox.innerHTML = "";
+    snapshot.forEach(docSnap => {
+      const data = docSnap.data();
+      const div = document.createElement("div");
+      div.className = "msg " + (data.from === currentUsername ? "me" : "you");
+
+      let time = "--:--";
+      if (data.timestamp?.toDate) {
+        time = new Date(data.timestamp.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } else if (data.clientTime) {
+        time = new Date(data.clientTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+
+      const check = data.from === currentUsername ? (data.seen ? "✔✔" : "✔") : "";
+
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.setAttribute("data-id", docSnap.id);
+
+      let pesanTeks = data.text;
+      if (data.edited) pesanTeks += " (diedit)";
+
+      bubble.innerHTML = `
+        <div class="text">${pesanTeks}</div>
+        <div class="meta">${time} <span class="check">${check}</span></div>
+      `;
+
+      div.appendChild(bubble);
+      messagesBox.appendChild(div);
+
+      // Update seen
+      if (data.from !== currentUsername && !data.seen) {
+        updateDoc(doc(db, "chats", chatId, "messages", docSnap.id), { seen: true });
+      }
     });
+
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+  });
+}
+
+// Autentikasi
+onAuthStateChanged(auth, async user => {
+  if (!user || !user.emailVerified) return location.href = "login.html";
+
+  currentUser = user;
+  const userDoc = await getDoc(doc(db, "users", user.uid));
+  currentUsername = userDoc.exists() ? userDoc.data().username : user.email.split("@")[0];
+
+  // Simpan token FCM
+  try {
+    const currentToken = await getToken(messaging, {
+      vapidKey: "BE-_jDlf4w4ZIfQBYi8-DJOb7opvtAfmtt3Od1dspuLBW3Dk8O-TIS_c4S-IG-pz9JIdf6JaBkX4sgEq0v2i9f4"
+    });
+    if (currentToken) {
+      await setDoc(doc(db, "fcmTokens", user.uid), {
+        token: currentToken,
+        uid: user.uid,
+        email: user.email
+      });
+    }
+  } catch (e) {
+    console.error("Gagal mendapatkan token FCM", e);
   }
-  
-  // ✅ Auth & Load chat
-  onAuthStateChanged(auth, async (user) => {
-    if (!user || !user.emailVerified) {
-      location.href = "login.html";
+
+  // Update readStatus
+  await updateDoc(doc(db, "chats", chatId), {
+    [`readStatus.${currentUsername}`]: Date.now()
+  });
+
+  loadChat();
+
+  // Typing indicator
+  onSnapshot(doc(db, "chats", chatId, "typing", chatWith), snap => {
+    typingStatus.textContent = snap.exists() && snap.data().typing ? "Sedang mengetik..." : "";
+  });
+});
+
+// Kirim pesan
+sendBtn.onclick = async () => {
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = "";
+  await setDoc(doc(db, "chats", chatId, "typing", currentUsername), { typing: false });
+
+  await addDoc(collection(db, "chats", chatId, "messages"), {
+    from: currentUsername,
+    to: chatWith,
+    text,
+    seen: false,
+    timestamp: serverTimestamp(),
+    clientTime: new Date().toISOString(),
+    edited: false
+  });
+
+  await updateDoc(doc(db, "chats", chatId), {
+    lastMessage: text,
+    lastTimestamp: Date.now(),
+    [`readStatus.${currentUsername}`]: Date.now()
+  });
+};
+
+// Deteksi sedang mengetik
+input.addEventListener("input", async () => {
+  const typing = input.value.trim().length > 0;
+  await setDoc(doc(db, "chats", chatId, "typing", currentUsername), { typing });
+});
+
+// Kembali ke home
+backBtn.onclick = () => {
+  localStorage.removeItem("chatId");
+  localStorage.removeItem("chatWith");
+  location.href = "home.html";
+};
+
+// Mencegah kembali ke chat setelah keluar
+window.addEventListener("pageshow", () => {
+  if (!localStorage.getItem("chatId")) location.href = "home.html";
+});
+
+// Fitur edit chat
+messagesBox.addEventListener("click", async function (e) {
+  const bubble = e.target.closest(".bubble");
+  if (!bubble) return;
+
+  const msgId = bubble.getAttribute("data-id");
+  const parent = bubble.closest(".msg");
+  const isMe = parent && parent.classList.contains("me");
+  if (!isMe) return;
+
+  const textDiv = bubble.querySelector(".text");
+  const oldText = textDiv.textContent.replace(" (diedit)", "");
+
+  bubble.innerHTML = `
+    <input type="text" class="edit-input" value="${oldText}" style="width: 100%; padding: 6px; border-radius: 6px; border: none; font-size: 14px;">
+    <div class="meta">
+      <button class="save-edit" style="margin-right: 8px;">Simpan</button>
+      <button class="cancel-edit">Batal</button>
+    </div>
+  `;
+
+  bubble.querySelector(".save-edit").onclick = async () => {
+    const newText = bubble.querySelector(".edit-input").value.trim();
+    if (!newText || newText === oldText) {
+      loadChat();
       return;
     }
-    
-    currentUser = user;
-    const userDoc = await getDoc(doc(db, "users", user.uid));
-    currentUsername = userDoc.exists() ? userDoc.data().username : user.email.split("@")[0];
-    
-    // ✅ Simpan token FCM ke Firestore
-    try {
-      const currentToken = await getToken(messaging, {
-        vapidKey: "BE-_jDlf4w4ZIfQBYi8-DJOb7opvtAfmtt3Od1dspuLBW3Dk8O-TIS_c4S-IG-pz9JIdf6JaBkX4sgEq0v2i9f4"
-      });
-      
-      if (currentToken) {
-        await setDoc(doc(db, "fcmTokens", user.uid), {
-          token: currentToken,
-          uid: user.uid,
-          email: user.email
-        });
-      }
-    } catch (e) {
-      console.error("Gagal mendapatkan token FCM", e);
-    }
-    
-    // ✅ Update read status & load chat
+
+    await updateDoc(doc(db, "chats", chatId, "messages", msgId), {
+      text: newText,
+      edited: true
+    });
+
+    // Update pesan terakhir jika ini adalah terakhir
     await updateDoc(doc(db, "chats", chatId), {
-      [`readStatus.${currentUsername}`]: Date.now()
+      lastMessage: newText,
+      lastTimestamp: Date.now()
     });
-    
+  };
+
+  bubble.querySelector(".cancel-edit").onclick = () => {
     loadChat();
-    
-    // ✅ Typing indicator listener
-    onSnapshot(doc(db, "chats", chatId, "typing", chatWith), snap => {
-      typingStatus.textContent = snap.exists() && snap.data().typing ? "Sedang mengetik..." : "";
-    });
-  });
-  
-  // ✅ Kirim pesan
-  sendBtn.onclick = async () => {
-    const text = input.value.trim();
-    if (!text) return;
-    
-    input.value = "";
-    await setDoc(doc(db, "chats", chatId, "typing", currentUsername), { typing: false });
-    
-    await addDoc(collection(db, "chats", chatId, "messages"), {
-      from: currentUsername,
-      to: chatWith,
-      text,
-      seen: false,
-      timestamp: serverTimestamp(),
-      clientTime: new Date().toISOString(),
-      edited: false
-    });
   };
-  
-  // ✅ Update typing status
-  input.addEventListener("input", async () => {
-    const typing = input.value.trim().length > 0;
-    await setDoc(doc(db, "chats", chatId, "typing", currentUsername), { typing });
-  });
-  
-  // ✅ Kembali ke home
-  backBtn.onclick = () => {
-    localStorage.removeItem("chatId");
-    localStorage.removeItem("chatWith");
-    location.href = "home.html";
-  };
-  
-  // ✅ Proteksi back
-  window.addEventListener("pageshow", () => {
-    if (!localStorage.getItem("chatId")) {
-      location.href = "home.html";
-    }
-  });
-  
-  // ✅ Edit pesan
-  messagesBox.addEventListener("click", async function(e) {
-    const bubble = e.target.closest(".bubble");
-    if (!bubble) return;
-    
-    const msgId = bubble.getAttribute("data-id");
-    const parent = bubble.closest(".msg");
-    const isMe = parent && parent.classList.contains("me");
-    if (!isMe) return;
-    
-    const textDiv = bubble.querySelector(".text");
-    const oldText = textDiv.textContent.replace(" (diedit)", "");
-    
-    bubble.innerHTML = `
-      <input type="text" class="edit-input" value="${oldText}" style="width: 100%; padding: 6px; border-radius: 6px; border: none; font-size: 14px;">
-      <div class="meta">
-        <button class="save-edit" style="margin-right: 8px;">Simpan</button>
-        <button class="cancel-edit">Batal</button>
-      </div>
-    `;
-    
-    bubble.querySelector(".save-edit").onclick = async () => {
-      const newText = bubble.querySelector(".edit-input").value.trim();
-      if (!newText || newText === oldText) {
-        loadChat();
-        return;
-      }
-      
-      await updateDoc(doc(db, "chats", chatId, "messages", msgId), {
-        text: newText,
-        edited: true
-      });
-    };
-    
-    bubble.querySelector(".cancel-edit").onclick = () => {
-      loadChat();
-    };
-  });
+});
 </script>
 </body>
 </html>
